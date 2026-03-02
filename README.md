@@ -24,7 +24,7 @@ OpenClaw 的 **OneBot 11 协议通道插件**，让 QQ 成为 OpenClaw 一等消
 
 ### 与其他方案对比
 
-| | **openclaw-onebot** (本项目) | **qqbot** (ClawHub) | **onebot-adapter** (ClawHub) |
+| | **openclaw-onebot** (本项目) | **方案 A** | **方案 B** |
 |---|---|---|---|
 | **协议** | OneBot 11 (NapCat/go-cqhttp) | QQ 官方 Bot API | OneBot 11 (NapCat) |
 | **集成方式** | ✅ **ChannelPlugin 原生集成** | ❌ 独立 Python 脚本 + 文件队列 | ❌ 独立 Python 脚本 |
@@ -188,9 +188,9 @@ An [OpenClaw](https://github.com/openclaw/openclaw) **native channel plugin** th
 
 ### Comparison with Alternatives
 
-| | **openclaw-onebot** (this) | **qqbot** (ClawHub) | **onebot-adapter** (ClawHub) |
+| | **openclaw-onebot** (this) | **方案 A** | **方案 B** |
 |---|---|---|---|
-| **Protocol** | OneBot 11 (NapCat/go-cqhttp) | QQ Official Bot API | OneBot 11 (NapCat) |
+| **Protocol** | OneBot 11 (NapCat/go-cqhttp) | QQ Official Bot API | OneBot 11 |
 | **Integration** | ✅ **Native ChannelPlugin** | ❌ Standalone Python + file queue | ❌ Standalone Python scripts |
 | **Message routing** | Auto via OpenClaw `message` tool | Manual file I/O bridge | Manual Python API calls |
 | **Voice** | ✅ SILK/AMR → MP3 → STT/TTS auto | ❌ None | ❌ None |
