@@ -61,7 +61,7 @@ describe('e2e', () => {
 
     await vi.waitFor(() => {
       expect(httpServer.requests.length).toBeGreaterThan(0);
-    });
+    }, { timeout: 5000 });
 
     const req = httpServer.requests[0];
     expect(req.url).toBe('/send_private_msg');
@@ -118,7 +118,7 @@ describe('e2e', () => {
 
     await vi.waitFor(() => {
       expect(httpServer.requests.length).toBeGreaterThan(0);
-    });
+    }, { timeout: 5000 });
 
     const req = httpServer.requests[0];
     expect(req.url).toBe('/send_group_msg');
@@ -173,7 +173,7 @@ describe('e2e', () => {
       time: Math.floor(Date.now() / 1000),
     });
 
-    await vi.waitFor(() => expect(httpServer.requests.length).toBeGreaterThanOrEqual(2));
+    await vi.waitFor(() => expect(httpServer.requests.length).toBeGreaterThanOrEqual(2), { timeout: 5000 });
 
     const [r1, r2] = httpServer.requests;
     expect(r1.url).toBe('/send_private_msg');

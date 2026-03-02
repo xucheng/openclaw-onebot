@@ -13,6 +13,7 @@ vi.mock('../src/outbound.js', () => ({
     return { channel: 'onebot', messageId: 'm1' };
   },
   sendImage: async () => ({ status: 'ok', retcode: 0, data: {} }),
+  sendRecord: async () => ({ status: 'ok', retcode: 0, data: {} }),
 }));
 
 describe('gateway timeout + error handling', () => {
@@ -29,7 +30,7 @@ describe('gateway timeout + error handling', () => {
   it('sends a processing message on response timeout (fake timers)', async () => {
     vi.useFakeTimers();
 
-    // runtime that never delivers
+    // runtime that never delivers (so gateway hits the 90s response timeout)
     mockRuntime = {
       channel: {
         activity: { record: () => {} },
@@ -39,14 +40,13 @@ describe('gateway timeout + error handling', () => {
           formatInboundEnvelope: (x: any) => x.body,
           finalizeInboundContext: (x: any) => x,
           resolveEffectiveMessagesConfig: () => ({ responsePrefix: '' }),
-          dispatchReplyWithBufferedBlockDispatcher: async () => { if (globalThis.onDispatch) globalThis.onDispatch(); return new Promise(() => {}); },
+          dispatchReplyWithBufferedBlockDispatcher: async () => new Promise(() => {}),
         },
       },
     };
 
     const wsServer = await startMockOneBotWsServer();
     const { startGateway } = await import('../src/gateway.js');
-
     const ac = new AbortController();
 
     let readyResolve!: () => void;
@@ -81,16 +81,20 @@ describe('gateway timeout + error handling', () => {
       time: Math.floor(Date.now() / 1000),
     });
 
-    // Advance to trigger the 90s timeout inside gateway.ts
-    await new Promise<void>((r) => { globalThis.onDispatch = r; });
+    // 1) flush message batching (1500ms) so dispatch starts
+    await vi.advanceTimersByTimeAsync(2000);
+    // 2) trigger gateway response timeout (90s)
     await vi.advanceTimersByTimeAsync(100_000);
 
-    await vi.waitFor(() => expect(sentTexts.some((t) => t.includes('processing'))).toBe(true));
+    // With fake timers advanced, the processing notice should be sent
+    expect(sentTexts.some((t) => t.includes('processing'))).toBe(true);
 
     ac.abort();
     await runP;
     await wsServer.close();
   });
+
+
 
   it('sends error text when runtime dispatch throws', async () => {
     mockRuntime = {
@@ -147,7 +151,7 @@ describe('gateway timeout + error handling', () => {
 
     await vi.waitFor(() => {
       expect(sentTexts.length).toBeGreaterThan(0);
-    });
+    }, { timeout: 5000 });
 
     expect(sentTexts.join('\n')).toMatch(/Error: dispatch boom/);
 

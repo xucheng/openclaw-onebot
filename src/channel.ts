@@ -91,7 +91,7 @@ export const onebotPlugin: ChannelPlugin<ResolvedOneBotAccount> = {
     },
   },
   gateway: {
-    startAccount: async (ctx: any) => {
+    startAccount: async (ctx) => {
       const { account, abortSignal, log, cfg } = ctx;
 
       log?.info(`[onebot:${account.accountId}] Starting gateway`);
@@ -128,7 +128,7 @@ export const onebotPlugin: ChannelPlugin<ResolvedOneBotAccount> = {
       lastConnectedAt: null,
       lastError: null,
     },
-    buildAccountSnapshot: ({ account, runtime }: { account: any; runtime: any }) => ({
+    buildAccountSnapshot: ({ account, runtime }) => ({
       accountId: account?.accountId ?? DEFAULT_ACCOUNT_ID,
       name: account?.name,
       enabled: account?.enabled ?? false,

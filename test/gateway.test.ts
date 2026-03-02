@@ -22,8 +22,15 @@ vi.mock('../src/outbound.js', () => {
       outboundCalls.push({ kind: 'image', args });
       return { status: 'ok', retcode: 0, data: {} };
     },
+    sendRecord: async (...args: any[]) => {
+      outboundCalls.push({ kind: 'record', args });
+      return { status: 'ok', retcode: 0, data: {} };
+    },
   };
 });
+
+// Batch gap is 1500ms — tests need longer waitFor timeouts
+const WAIT_FOR_BATCH = { timeout: 5000 };
 
 describe('gateway', () => {
   beforeEach(() => {
@@ -41,7 +48,6 @@ describe('gateway', () => {
   it('connects and includes access_token query', async () => {
     const wsServer = await startMockOneBotWsServer();
     const ac = new AbortController();
-
     const { startGateway } = await import('../src/gateway.js');
 
     let ready = false;
@@ -56,9 +62,7 @@ describe('gateway', () => {
       },
       abortSignal: ac.signal,
       cfg: {},
-      onReady: () => {
-        ready = true;
-      },
+      onReady: () => { ready = true; },
       log: { info: () => {}, error: () => {}, debug: () => {} },
     });
 
@@ -113,17 +117,16 @@ describe('gateway', () => {
 
     await vi.waitFor(() => {
       expect(runtimeState.state.lastDispatchArgs).not.toBeNull();
-    });
+    }, WAIT_FOR_BATCH);
 
     const ctx = runtimeState.state.lastDispatchArgs.ctx;
     expect(ctx.From).toBe('onebot:private:222');
     expect(String(ctx.MessageSid)).toBe('111');
 
-    // Outbound: should attempt to send media (image) then text
     await vi.waitFor(() => {
       expect(outboundCalls.find((c) => c.kind === 'image')).toBeTruthy();
       expect(outboundCalls.find((c) => c.kind === 'text')).toBeTruthy();
-    });
+    }, WAIT_FOR_BATCH);
 
     ac.abort();
     await runP;
@@ -173,11 +176,12 @@ describe('gateway', () => {
 
     await vi.waitFor(() => {
       expect(runtimeState.state.lastEnvelopeArgs).not.toBeNull();
-    });
+    }, WAIT_FOR_BATCH);
 
     const envArgs = runtimeState.state.lastEnvelopeArgs;
     expect(String(envArgs.body)).toContain('[Image: http://img]');
-    expect(String(envArgs.body)).toContain('[Voice: http://voice]');
+    // Voice download fails in test (fake URL) -> falls back to placeholder
+    expect(String(envArgs.body)).toMatch(/\[语音\]|<media:audio>/);
 
     ac.abort();
     await runP;
@@ -185,13 +189,11 @@ describe('gateway', () => {
   });
 
   it('reconnects on abnormal close (uses timers)', async () => {
-
     const wsServer = await startMockOneBotWsServer();
     const ac = new AbortController();
     const { startGateway } = await import('../src/gateway.js');
 
     let readyCount = 0;
-
     const runP = startGateway({
       account: {
         accountId: 'default',
@@ -202,21 +204,13 @@ describe('gateway', () => {
       },
       abortSignal: ac.signal,
       cfg: {},
-      onReady: () => {
-        readyCount++;
-      },
+      onReady: () => { readyCount++; },
       log: { info: () => {}, error: () => {}, debug: () => {} },
     });
 
-    // Wait initial connect
     await vi.waitFor(() => expect(readyCount).toBe(1));
-
-    // Close clients to trigger reconnect scheduling
     wsServer.closeAllClients(4002, 'boom');
-
-    // Wait for reconnect delay (>=1s)
     await new Promise((r) => setTimeout(r, 1200));
-
     expect(wsServer.connectionUrls.length).toBeGreaterThanOrEqual(2);
 
     ac.abort();
@@ -248,12 +242,6 @@ describe('gateway', () => {
 
     await readyP;
 
-    // Send invalid JSON by sending raw string via the ws server clients
-    for (const client of (await import('ws')).WebSocketServer ? [] : []) {
-      void client;
-    }
-
-    // We'll just send a valid JSON meta_event and ensure no crash.
     wsServer.sendToAll({
       post_type: 'meta_event',
       meta_event_type: 'heartbeat',

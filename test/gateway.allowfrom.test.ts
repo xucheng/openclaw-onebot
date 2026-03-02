@@ -11,6 +11,7 @@ vi.mock('../src/runtime.js', () => ({
 vi.mock('../src/outbound.js', () => ({
   sendText: async () => ({ channel: 'onebot', messageId: 'm1' }),
   sendImage: async () => ({ status: 'ok', retcode: 0, data: {} }),
+  sendRecord: async () => ({ status: 'ok', retcode: 0, data: {} }),
 }));
 
 function makePrivateMsg(userId: number, text: string) {
@@ -93,9 +94,9 @@ describe('gateway allowFrom', () => {
     });
 
     await readyP;
-    wsServer.sendToAll(makePrivateMsg(999, 'anyone'));
+    wsServer.sendToAll(makePrivateMsg(888, 'anyone'));
 
-    await vi.waitFor(() => expect(dispatchCount).toBe(1));
+    await vi.waitFor(() => expect(dispatchCount).toBe(1), { timeout: 5000 });
 
     ac.abort();
     await runP;
@@ -129,7 +130,7 @@ describe('gateway allowFrom', () => {
     wsServer.sendToAll(makePrivateMsg(222, 'blocked'));
 
     // Wait a bit — should NOT dispatch
-    await new Promise((r) => setTimeout(r, 100));
+    await new Promise((r) => setTimeout(r, 2500));
     expect(dispatchCount).toBe(0);
 
     ac.abort();
@@ -163,7 +164,7 @@ describe('gateway allowFrom', () => {
     await readyP;
     wsServer.sendToAll(makePrivateMsg(111, 'allowed'));
 
-    await vi.waitFor(() => expect(dispatchCount).toBe(1));
+    await vi.waitFor(() => expect(dispatchCount).toBe(1), { timeout: 5000 });
 
     ac.abort();
     await runP;
@@ -196,7 +197,7 @@ describe('gateway allowFrom', () => {
     await readyP;
     wsServer.sendToAll(makeGroupMsg(1, 200, 'blocked group'));
 
-    await new Promise((r) => setTimeout(r, 100));
+    await new Promise((r) => setTimeout(r, 2500));
     expect(dispatchCount).toBe(0);
 
     ac.abort();
@@ -230,7 +231,7 @@ describe('gateway allowFrom', () => {
     await readyP;
     wsServer.sendToAll(makeGroupMsg(1, 100, 'allowed group'));
 
-    await vi.waitFor(() => expect(dispatchCount).toBe(1));
+    await vi.waitFor(() => expect(dispatchCount).toBe(1), { timeout: 5000 });
 
     ac.abort();
     await runP;
@@ -261,9 +262,9 @@ describe('gateway allowFrom', () => {
     });
 
     await readyP;
-    wsServer.sendToAll(makePrivateMsg(999, 'wildcard'));
+    wsServer.sendToAll(makePrivateMsg(888, 'wildcard'));
 
-    await vi.waitFor(() => expect(dispatchCount).toBe(1));
+    await vi.waitFor(() => expect(dispatchCount).toBe(1), { timeout: 5000 });
 
     ac.abort();
     await runP;
@@ -297,20 +298,20 @@ describe('gateway allowFrom', () => {
 
     // Allowed private
     wsServer.sendToAll(makePrivateMsg(111, 'ok'));
-    await vi.waitFor(() => expect(dispatchCount).toBe(1));
+    await vi.waitFor(() => expect(dispatchCount).toBe(1), { timeout: 5000 });
 
     // Blocked private
     wsServer.sendToAll(makePrivateMsg(222, 'no'));
-    await new Promise((r) => setTimeout(r, 100));
+    await new Promise((r) => setTimeout(r, 2500));
     expect(dispatchCount).toBe(1); // still 1
 
     // Allowed group
     wsServer.sendToAll(makeGroupMsg(333, 200, 'ok'));
-    await vi.waitFor(() => expect(dispatchCount).toBe(2));
+    await vi.waitFor(() => expect(dispatchCount).toBe(2), { timeout: 5000 });
 
     // Blocked group
     wsServer.sendToAll(makeGroupMsg(333, 300, 'no'));
-    await new Promise((r) => setTimeout(r, 100));
+    await new Promise((r) => setTimeout(r, 2500));
     expect(dispatchCount).toBe(2); // still 2
 
     ac.abort();
