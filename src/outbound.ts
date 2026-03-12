@@ -15,6 +15,14 @@ export interface OutboundResult {
   error?: string;
 }
 
+export type OneBotReactionResult = {
+  channel: "onebot";
+  messageId: string | number;
+  emojiId: string | number;
+  ok: boolean;
+  error?: string;
+};
+
 /**
  * Parse target address.
  * Formats:
@@ -64,6 +72,12 @@ async function callApi(
   }
 
   return (await response.json()) as OneBotApiResponse;
+}
+
+function normalizeMessageRef(value: string | number): string | number {
+  if (typeof value === "number") return value;
+  const trimmed = value.trim();
+  return /^\d+$/.test(trimmed) ? Number(trimmed) : trimmed;
 }
 
 /**
@@ -181,4 +195,56 @@ export async function uploadFile(
     file: filePath,
     name: fileName,
   });
+}
+
+/**
+ * React to a message via NapCat / OneBot 11.
+ */
+export async function reactToMessage(
+  account: ResolvedOneBotAccount,
+  messageId: string | number,
+  emojiId: string | number,
+): Promise<OneBotReactionResult> {
+  if (!account.httpUrl) {
+    return {
+      channel: "onebot",
+      messageId,
+      emojiId,
+      ok: false,
+      error: "OneBot not configured (missing httpUrl)",
+    };
+  }
+
+  try {
+    const result = await callApi(account, "set_msg_emoji_like", {
+      message_id: normalizeMessageRef(messageId),
+      emoji_id: normalizeMessageRef(emojiId),
+    });
+
+    if (result.retcode !== 0) {
+      return {
+        channel: "onebot",
+        messageId,
+        emojiId,
+        ok: false,
+        error: `OneBot API returned error: ${result.retcode} ${result.message ?? result.wording ?? ""}`.trim(),
+      };
+    }
+
+    return {
+      channel: "onebot",
+      messageId,
+      emojiId,
+      ok: true,
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return {
+      channel: "onebot",
+      messageId,
+      emojiId,
+      ok: false,
+      error: message,
+    };
+  }
 }

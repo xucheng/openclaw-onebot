@@ -189,6 +189,69 @@ describe('e2e', () => {
     await httpServer.close();
   });
 
+  it('block streaming sends multiple QQ messages in order', async () => {
+    runtimeState = createMockRuntime({
+      nextDeliverPayloads: [
+        { text: 'stream-1' },
+        { text: 'stream-2' },
+      ],
+    });
+
+    const httpServer = await startMockOneBotHttpServer();
+    const wsServer = await startMockOneBotWsServer();
+
+    const { startGateway } = await import('../src/gateway.js');
+
+    const ac = new AbortController();
+
+    let readyResolve!: () => void;
+    const readyP = new Promise<void>((r) => (readyResolve = r));
+
+    const runP = startGateway({
+      account: {
+        accountId: 'default',
+        enabled: true,
+        wsUrl: wsServer.wsUrl,
+        httpUrl: httpServer.baseUrl,
+        config: {},
+      },
+      abortSignal: ac.signal,
+      cfg: {
+        agents: { defaults: { blockStreamingDefault: 'on' } },
+      },
+      onReady: () => readyResolve(),
+      log: { info: () => {}, error: () => {}, debug: () => {} },
+    });
+
+    await readyP;
+
+    wsServer.sendToAll({
+      post_type: 'message',
+      message_type: 'private',
+      sub_type: 'friend',
+      message_id: 2004,
+      user_id: 3004,
+      message: [{ type: 'text', data: { text: 'stream it' } }],
+      raw_message: 'stream it',
+      sender: { user_id: 3004, nickname: 'StreamUser' },
+      self_id: 999,
+      time: Math.floor(Date.now() / 1000),
+    });
+
+    await vi.waitFor(() => {
+      expect(httpServer.requests.length).toBeGreaterThanOrEqual(2);
+    }, { timeout: 5000 });
+
+    expect(httpServer.requests[0].url).toBe('/send_private_msg');
+    expect(httpServer.requests[0].bodyJson.message[0].data.text).toBe('stream-1');
+    expect(httpServer.requests[1].bodyJson.message[0].data.text).toBe('stream-2');
+
+    ac.abort();
+    await runP;
+    await wsServer.close();
+    await httpServer.close();
+  });
+
   it('reconnects after WS close and can reconnect to restarted server', async () => {
     const httpServer = await startMockOneBotHttpServer();
     const wsServer = await startMockOneBotWsServer();

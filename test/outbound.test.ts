@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { sendText, sendImage, sendRecord, uploadFile } from '../src/outbound.js';
+import { sendText, sendImage, sendRecord, uploadFile, reactToMessage } from '../src/outbound.js';
 import type { ResolvedOneBotAccount } from '../src/types.js';
 
 function mkAccount(overrides?: Partial<ResolvedOneBotAccount>): ResolvedOneBotAccount {
@@ -197,5 +197,36 @@ describe('outbound', () => {
     expect(String(url)).toMatch(/upload_private_file$/);
     const body = JSON.parse(init.body);
     expect(body.user_id).toBe(9);
+  });
+
+  it('reactToMessage: calls set_msg_emoji_like', async () => {
+    (globalThis.fetch as any).mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      json: async () => ({ status: 'ok', retcode: 0, data: null }),
+    });
+
+    const res = await reactToMessage(mkAccount(), '5566', '128077');
+    expect(res.ok).toBe(true);
+
+    const [url, init] = (globalThis.fetch as any).mock.calls[0];
+    expect(String(url)).toMatch(/set_msg_emoji_like$/);
+    const body = JSON.parse(init.body);
+    expect(body.message_id).toBe(5566);
+    expect(body.emoji_id).toBe(128077);
+  });
+
+  it('reactToMessage: surfaces API errors', async () => {
+    (globalThis.fetch as any).mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      json: async () => ({ status: 'failed', retcode: 100, data: null, message: 'bad react' }),
+    });
+
+    const res = await reactToMessage(mkAccount(), 1, 2);
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/bad react/);
   });
 });

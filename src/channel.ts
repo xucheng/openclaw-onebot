@@ -1,7 +1,7 @@
 import type { ChannelPlugin } from "clawdbot/plugin-sdk";
 import type { ResolvedOneBotAccount } from "./types.js";
 import { listOneBotAccountIds, resolveOneBotAccount, applyOneBotAccountConfig } from "./config.js";
-import { sendText } from "./outbound.js";
+import { reactToMessage, sendText } from "./outbound.js";
 import { startGateway } from "./gateway.js";
 
 const DEFAULT_ACCOUNT_ID = "default";
@@ -19,8 +19,15 @@ export const onebotPlugin: ChannelPlugin<ResolvedOneBotAccount> = {
   capabilities: {
     chatTypes: ["direct", "group"],
     media: true,
-    reactions: false,
+    reactions: true,
     threads: false,
+    blockStreaming: true,
+  },
+  streaming: {
+    blockStreamingCoalesceDefaults: {
+      minChars: 80,
+      idleMs: 600,
+    },
   },
   reload: { configPrefixes: ["channels.onebot"] },
   messaging: {
@@ -87,6 +94,66 @@ export const onebotPlugin: ChannelPlugin<ResolvedOneBotAccount> = {
         channel: "onebot",
         messageId: result.messageId,
         error: result.error ? new Error(result.error) : undefined,
+      };
+    },
+  },
+  actions: {
+    listActions: () => ["react"],
+    supportsAction: ({ action }) => action === "react",
+    handleAction: async ({ action, cfg, params, accountId, toolContext }) => {
+      if (action !== "react") {
+        return {
+          ok: false,
+          error: `Unsupported OneBot action: ${action}`,
+          content: [{ type: "text", text: `Unsupported OneBot action: ${action}` }],
+        };
+      }
+
+      const messageId =
+        params.message_id ??
+        params.messageId ??
+        params.message ??
+        toolContext?.currentMessageId;
+      const emojiId =
+        params.emoji_id ??
+        params.emojiId ??
+        params.emoji ??
+        params.reaction;
+
+      if (messageId == null || emojiId == null || String(emojiId).trim() === "") {
+        return {
+          ok: false,
+          error: "OneBot react requires `emoji` and `message_id` (or current message context).",
+          content: [
+            {
+              type: "text",
+              text: "OneBot react requires `emoji` and `message_id` (or current message context).",
+            },
+          ],
+        };
+      }
+
+      const account = resolveOneBotAccount(cfg, accountId);
+      const result = await reactToMessage(account, messageId as string | number, emojiId as string | number);
+
+      if (!result.ok) {
+        return {
+          ok: false,
+          error: result.error ?? "OneBot reaction failed",
+          content: [{ type: "text", text: result.error ?? "OneBot reaction failed" }],
+          data: result,
+        };
+      }
+
+      return {
+        ok: true,
+        data: result,
+        content: [
+          {
+            type: "text",
+            text: `Reacted with ${String(emojiId)} to message ${String(messageId)}.`,
+          },
+        ],
       };
     },
   },

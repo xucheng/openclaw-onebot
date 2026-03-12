@@ -13,17 +13,25 @@ OpenClaw 的 **OneBot 11 协议通道插件**，让 QQ 成为 OpenClaw 一等消
 
 支持 [NapCat](https://github.com/NapNeko/NapCatQQ)、[go-cqhttp](https://github.com/Mrs4s/go-cqhttp) 等所有兼容 OneBot 11 协议的 QQ 机器人框架。
 
+说明：
+- 插件 `id` 是 `openclaw-onebot`
+- 通道 `id` 仍然是 `onebot`
+- 因此 `plugins.allow` / `plugins.entries` / `plugins.installs` 使用 `openclaw-onebot`
+- `channels.onebot` 保持不变
+
 ### 功能
 
 - 🔌 **原生通道插件** — QQ 与 Discord / Telegram / WhatsApp 同级
 - 📨 私聊和群聊收发消息
+- 😀 **Reaction 支持（群聊）** — 通过 NapCat `set_msg_emoji_like` 给群消息加表情回应；QQ 私聊目前不稳定/通常不生效
+- 🌊 **Block streaming** — 支持 OpenClaw 分块回复，QQ 端会连续收到多条流式消息
 - 🎤 **语音完整链路** — QQ 语音 (SILK/AMR) → MP3 → STT → TTS → 发送 QQ 语音
 - 📦 **消息聚合** — 连续多条消息 1.5s 内自动合并（类似 Telegram 风格）
 - 🖼️ 图片、语音、文件附件发送
 - 🔄 WebSocket 自动重连（指数退避）
 - 🔒 可选 access token 鉴权
 - 🎯 `allowFrom` 消息来源过滤（私聊/群聊/用户级别）
-- ✅ 58 个测试用例全部通过
+- ✅ 64 个测试用例全部通过
 
 ### 与其他方案对比
 
@@ -32,10 +40,12 @@ OpenClaw 的 **OneBot 11 协议通道插件**，让 QQ 成为 OpenClaw 一等消
 | **协议** | OneBot 11 (NapCat/go-cqhttp) | QQ 官方 Bot API | OneBot 11 (NapCat) |
 | **集成方式** | ✅ **ChannelPlugin 原生集成** | ❌ 独立 Python 脚本 + 文件队列 | ❌ 独立 Python 脚本 |
 | **消息路由** | OpenClaw 自动路由，`message` tool 直接用 | 文件队列读写，需手动桥接 | 手动调 Python API |
+| **Reaction** | ✅ 群聊支持，私聊不保证 | ❌ 无 | ❌ 无 |
+| **流式回复** | ✅ Block streaming 多段消息 | ❌ 无 | ❌ 无 |
 | **语音支持** | ✅ SILK/AMR → MP3 → STT/TTS 全自动 | ❌ 无 | ❌ 无 |
 | **消息聚合** | ✅ 1.5s 智能合并 | ❌ 无 | ❌ 无 |
 | **自动重连** | ✅ WebSocket 指数退避 | daemon 脚本重启 | ❌ 无 |
-| **测试** | ✅ 58 tests | ❌ 无 | ❌ 无 |
+| **测试** | ✅ 64 tests | ❌ 无 | ❌ 无 |
 | **语言** | TypeScript | Python | Python |
 | **需要额外进程** | ❌ 随 gateway 启动 | ✅ 需独立运行 daemon | ✅ 需独立运行 listener |
 
@@ -56,6 +66,8 @@ OpenClaw OneBot Plugin (ChannelPlugin)
 OpenClaw Gateway (统一消息管线)
   ├── STT (语音转文字)
   ├── Agent 对话
+  ├── Block streaming (多段消息回复)
+  ├── Reaction action
   └── TTS (文字转语音) → sendRecord → QQ 语音
 ```
 
@@ -68,7 +80,7 @@ OpenClaw Gateway (统一消息管线)
 bash scripts/install.sh
 
 # 或手动
-cp -r src index.ts package.json tsconfig.json ~/.openclaw/plugins/onebot/
+cp -r src index.ts package.json package-lock.json openclaw.plugin.json tsconfig.json ~/.openclaw/plugins/onebot/
 cd ~/.openclaw/plugins/onebot && npm install && npm run build
 ```
 
@@ -78,6 +90,14 @@ cd ~/.openclaw/plugins/onebot && npm install && npm run build
 
 ```json
 {
+  "plugins": {
+    "allow": ["openclaw-onebot"],
+    "entries": {
+      "openclaw-onebot": {
+        "enabled": true
+      }
+    }
+  },
   "channels": {
     "onebot": {
       "enabled": true,
@@ -87,6 +107,11 @@ cd ~/.openclaw/plugins/onebot && npm install && npm run build
   }
 }
 ```
+
+说明：
+- 插件配置键使用 `openclaw-onebot`
+- 通道配置键使用 `channels.onebot`
+- 如果你是通过本地路径/扩展目录安装插件，通常还需要在 `plugins.installs.openclaw-onebot` 中指向实际安装目录；如果用 OpenClaw 自己的插件安装流程，这一项会自动生成
 
 也支持环境变量：
 
@@ -112,8 +137,7 @@ openclaw gateway restart
       "wsUrl": "ws://your-host:3001",
       "httpUrl": "http://your-host:3001",
       "accessToken": "your_token",
-      "allowFrom": ["private:12345", "group:67890"],
-      "users": ["12345"]
+      "allowFrom": ["private:12345", "group:67890"]
     }
   }
 }
@@ -122,8 +146,62 @@ openclaw gateway restart
 | 参数 | 说明 |
 |------|------|
 | `allowFrom` | 消息来源白名单 — `private:<QQ号>`、`group:<群号>`、或 `*`（允许所有） |
-| `users` | 允许触发机器人的 QQ 用户白名单 |
 | `accessToken` | HTTP API 用 Bearer token，WebSocket 用 query 参数 |
+
+### Reaction 与流式回复
+
+- **Reaction**
+  - 插件实现了 OpenClaw channel action `react`
+  - 通过 NapCat `set_msg_emoji_like` 对群消息或指定群消息 `message_id` 添加表情
+  - QQ 私聊 reaction 目前不可靠，接口可能返回成功，但不会真正落到消息上
+- **流式回复**
+  - 这里支持的是 **OpenClaw block streaming**
+  - QQ 端表现为连续多条分块消息，不是“编辑同一条消息”的 draft stream
+  - 开启方式：
+
+```json
+{
+  "agents": {
+    "defaults": {
+      "blockStreamingDefault": "on"
+    }
+  }
+}
+```
+
+- 可选调优：
+
+```json
+{
+  "channels": {
+    "onebot": {
+      "blockStreamingCoalesce": {
+        "minChars": 80,
+        "idleMs": 600
+      }
+    }
+  }
+}
+```
+
+### 验证
+
+- **Reaction**
+  - 先让家庭群里出现一条新消息
+  - 从 gateway 日志里拿到 `msg=<message_id>`
+  - 再执行：
+
+```bash
+npm run build
+npm run react-test -- --message-id <message_id> --emoji 76
+```
+
+  - 当前建议只把这项验证用于群聊消息；私聊 reaction 在 QQ/NapCat 上通常不生效
+
+- **Streaming**
+  - 在 OpenClaw 配置里开启 `agents.defaults.blockStreamingDefault = "on"`
+  - 然后在 QQ 里发一条明确要求“分段回复”的消息
+  - 成功时，QQ 会连续收到多条消息，日志里会出现 `deliver(block)`，最后再有 `deliver(final)`
 
 ### 语音支持（可选）
 
@@ -166,7 +244,7 @@ services:
 
 ```bash
 npm install
-npm test          # 58 tests
+npm test          # 64 tests
 npm run build     # 编译 TypeScript
 npm run coverage  # 覆盖率报告
 ```
@@ -180,17 +258,25 @@ npm run coverage  # 覆盖率报告
 
 An [OpenClaw](https://github.com/openclaw/openclaw) **native channel plugin** that connects to [NapCat](https://github.com/NapNeko/NapCatQQ), [go-cqhttp](https://github.com/Mrs4s/go-cqhttp), or any OneBot 11 compatible QQ bot framework.
 
+Note:
+- Plugin `id`: `openclaw-onebot`
+- Channel `id`: `onebot`
+- Use `openclaw-onebot` in `plugins.allow` / `plugins.entries` / `plugins.installs`
+- Keep `channels.onebot` unchanged
+
 ### Features
 
 - 🔌 **Native channel plugin** — QQ on par with Discord / Telegram / WhatsApp
 - 📨 Private & group chat (inbound + outbound)
+- 😀 **Reaction support (groups)** — react to a QQ group message via NapCat `set_msg_emoji_like`; QQ private-chat reactions are currently unreliable
+- 🌊 **Block streaming** — OpenClaw partial replies arrive as multiple QQ messages
 - 🎤 **Full voice pipeline** — QQ voice (SILK/AMR) → MP3 → STT → TTS → send QQ voice
 - 📦 **Message batching** — auto-merge rapid messages within 1.5s (Telegram-style)
 - 🖼️ Image, audio, and file attachments
 - 🔄 WebSocket auto-reconnect with exponential backoff
 - 🔒 Optional access token authentication
 - 🎯 `allowFrom` filtering (private/group/user-level)
-- ✅ 58 tests passing
+- ✅ 64 tests passing
 
 ### Comparison with Alternatives
 
@@ -199,10 +285,12 @@ An [OpenClaw](https://github.com/openclaw/openclaw) **native channel plugin** th
 | **Protocol** | OneBot 11 (NapCat/go-cqhttp) | QQ Official Bot API | OneBot 11 |
 | **Integration** | ✅ **Native ChannelPlugin** | ❌ Standalone Python + file queue | ❌ Standalone Python scripts |
 | **Message routing** | Auto via OpenClaw `message` tool | Manual file I/O bridge | Manual Python API calls |
+| **Reactions** | ✅ Group chats only; private chats not reliable | ❌ None | ❌ None |
+| **Streaming replies** | ✅ Block-streamed multi-message replies | ❌ None | ❌ None |
 | **Voice** | ✅ SILK/AMR → MP3 → STT/TTS auto | ❌ None | ❌ None |
 | **Batching** | ✅ 1.5s smart merge | ❌ None | ❌ None |
 | **Auto-reconnect** | ✅ Exponential backoff | Daemon restart | ❌ None |
-| **Tests** | ✅ 58 tests | ❌ None | ❌ None |
+| **Tests** | ✅ 64 tests | ❌ None | ❌ None |
 | **Language** | TypeScript | Python | Python |
 | **Extra process** | ❌ Runs with gateway | ✅ Separate daemon | ✅ Separate listener |
 
@@ -222,6 +310,14 @@ Add to `openclaw.json`:
 
 ```json
 {
+  "plugins": {
+    "allow": ["openclaw-onebot"],
+    "entries": {
+      "openclaw-onebot": {
+        "enabled": true
+      }
+    }
+  },
   "channels": {
     "onebot": {
       "enabled": true,
@@ -231,6 +327,11 @@ Add to `openclaw.json`:
   }
 }
 ```
+
+Notes:
+- Use `openclaw-onebot` for plugin config keys
+- Keep runtime channel config under `channels.onebot`
+- If you install from a local path / extension directory, you may also need `plugins.installs.openclaw-onebot` pointing at the actual install directory; OpenClaw usually writes this automatically during plugin install
 
 Or via environment variables:
 
@@ -254,12 +355,67 @@ End-to-end voice flow:
 
 **Dependencies**: `ffmpeg` + `uv` (for SILK decoding via `pilk`). Skip if text/image only.
 
+### Reactions and Streaming Replies
+
+- **Reactions**
+  - The plugin implements the OpenClaw `react` channel action
+  - It maps to NapCat `set_msg_emoji_like`
+  - Group-message reactions are supported
+  - QQ private-chat reactions are currently unreliable: the API may return success while no visible reaction is persisted
+- **Streaming replies**
+  - This plugin supports **OpenClaw block streaming**
+  - QQ receives multiple incremental messages instead of a single edited draft message
+  - Enable it with:
+
+```json
+{
+  "agents": {
+    "defaults": {
+      "blockStreamingDefault": "on"
+    }
+  }
+}
+```
+
+- Optional coalescing hint for OneBot:
+
+```json
+{
+  "channels": {
+    "onebot": {
+      "blockStreamingCoalesce": {
+        "minChars": 80,
+        "idleMs": 600
+      }
+    }
+  }
+}
+```
+
+### Verification
+
+- **Reaction**
+  - Send a fresh QQ group message first
+  - Read the inbound `msg=<message_id>` from the gateway log
+  - Then run:
+
+```bash
+npm run build
+npm run react-test -- --message-id <message_id> --emoji 76
+```
+
+  - For now, treat this as a group-chat verification flow; private-chat reactions are not a reliable capability
+
+- **Streaming**
+  - Enable `agents.defaults.blockStreamingDefault = "on"` in OpenClaw config
+  - Send a QQ prompt that explicitly asks for chunked / stepwise output
+  - Success looks like multiple QQ messages plus `deliver(block)` entries in the gateway log, followed by `deliver(final)`
+
 ### Configuration
 
 | Option | Description |
 |--------|-------------|
 | `allowFrom` | Whitelist — `private:<qq>`, `group:<id>`, or `*` (allow all) |
-| `users` | QQ user ID whitelist |
 | `accessToken` | Bearer token for HTTP, query param for WebSocket |
 
 ### Target Format
@@ -272,7 +428,7 @@ End-to-end voice flow:
 
 ```bash
 npm install
-npm test          # Run 58 tests
+npm test          # Run 64 tests
 npm run build     # Compile TypeScript
 npm run coverage  # Coverage report
 ```

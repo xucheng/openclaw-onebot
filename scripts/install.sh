@@ -16,6 +16,7 @@ cp -r "$SKILL_DIR"/src "$PLUGIN_DIR"/
 cp "$SKILL_DIR"/index.ts "$PLUGIN_DIR"/
 cp "$SKILL_DIR"/package.json "$PLUGIN_DIR"/
 cp "$SKILL_DIR"/package-lock.json "$PLUGIN_DIR"/
+cp "$SKILL_DIR"/openclaw.plugin.json "$PLUGIN_DIR"/
 cp "$SKILL_DIR"/tsconfig.json "$PLUGIN_DIR"/
 
 # 安装依赖并编译

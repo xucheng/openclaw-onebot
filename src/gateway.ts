@@ -563,7 +563,7 @@ export async function startGateway(ctx: GatewayContext): Promise<void> {
         if (event.user_id === event.self_id) return;
 
         log?.info(
-          `[onebot:${account.accountId}] ${isGroup ? "Group" : "Private"} message from ${senderName}(${senderId}): ${text.slice(0, 100)}`,
+          `[onebot:${account.accountId}] ${isGroup ? "Group" : "Private"} message from ${senderName}(${senderId}) msg=${event.message_id}: ${text.slice(0, 100)}`,
         );
 
         // Batch key: per-chat + per-sender for groups

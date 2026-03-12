@@ -3,7 +3,7 @@ import { onebotPlugin } from "./src/channel.js";
 import { setOneBotRuntime } from "./src/runtime.js";
 
 const plugin = {
-  id: "onebot",
+  id: "openclaw-onebot",
   name: "OneBot",
   description: "OneBot 11 channel plugin (NapCat/go-cqhttp)",
   register(api: MoltbotPluginApi) {

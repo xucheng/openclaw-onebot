@@ -1,18 +1,34 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { onebotPlugin } from '../src/channel.js';
 
 // Note: ChannelPlugin is type-only in src, so runtime import doesn't require clawdbot/plugin-sdk.
 
 describe('channel plugin shape', () => {
+  const oldFetch = globalThis.fetch;
+
+  beforeEach(() => {
+    globalThis.fetch = vi.fn();
+  });
+
+  afterEach(() => {
+    globalThis.fetch = oldFetch;
+    vi.restoreAllMocks();
+  });
+
   it('has correct id and meta', () => {
     expect(onebotPlugin.id).toBe('onebot');
     expect(onebotPlugin.meta.id).toBe('onebot');
     expect(onebotPlugin.meta.label).toMatch(/OneBot/);
   });
 
-  it('capabilities: media=true, reactions=false', () => {
+  it('capabilities: media=true, reactions=true, blockStreaming=true', () => {
     expect(onebotPlugin.capabilities.media).toBe(true);
-    expect(onebotPlugin.capabilities.reactions).toBe(false);
+    expect(onebotPlugin.capabilities.reactions).toBe(true);
+    expect(onebotPlugin.capabilities.blockStreaming).toBe(true);
+    expect(onebotPlugin.streaming.blockStreamingCoalesceDefaults).toEqual({
+      minChars: 80,
+      idleMs: 600,
+    });
   });
 
   it('normalizeTarget strips onebot: prefix', () => {
@@ -70,5 +86,47 @@ describe('channel plugin shape', () => {
     const res2 = apply({ cfg: {}, accountId: 'default', input: { token: 'ws://a,http://b,TOKEN123', name: 'QQBot' } } as any);
     expect((res2 as any).channels.onebot.accessToken).toBe('TOKEN123');
     expect((res2 as any).channels.onebot.name).toBe('QQBot');
+  });
+
+  it('actions.react sends set_msg_emoji_like using current message context', async () => {
+    (globalThis.fetch as any).mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      json: async () => ({ status: 'ok', retcode: 0, data: null }),
+    });
+
+    const result = await onebotPlugin.actions.handleAction({
+      action: 'react',
+      cfg: {
+        channels: {
+          onebot: {
+            httpUrl: 'http://127.0.0.1:3001',
+            wsUrl: 'ws://127.0.0.1:3000',
+          },
+        },
+      },
+      params: { emoji: 128077 },
+      toolContext: { currentMessageId: '5566' },
+    } as any);
+
+    expect(result.ok).toBe(true);
+    const [url, init] = (globalThis.fetch as any).mock.calls[0];
+    expect(String(url)).toMatch(/set_msg_emoji_like$/);
+    const body = JSON.parse(init.body);
+    expect(body.message_id).toBe(5566);
+    expect(body.emoji_id).toBe(128077);
+  });
+
+  it('actions.react validates missing args', async () => {
+    const result = await onebotPlugin.actions.handleAction({
+      action: 'react',
+      cfg: {},
+      params: {},
+      toolContext: {},
+    } as any);
+
+    expect(result.ok).toBe(false);
+    expect(String(result.error)).toMatch(/emoji/);
   });
 });

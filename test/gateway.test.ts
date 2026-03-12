@@ -188,6 +188,67 @@ describe('gateway', () => {
     await wsServer.close();
   });
 
+  it('delivers block replies as multiple outbound messages', async () => {
+    runtimeState = createMockRuntime({
+      nextDeliverPayloads: [
+        { text: 'part-1' },
+        { text: 'part-2' },
+      ],
+    });
+
+    const wsServer = await startMockOneBotWsServer();
+    const ac = new AbortController();
+    const { startGateway } = await import('../src/gateway.js');
+
+    let readyResolve!: () => void;
+    const readyP = new Promise<void>((r) => (readyResolve = r));
+
+    const runP = startGateway({
+      account: {
+        accountId: 'default',
+        enabled: true,
+        wsUrl: wsServer.wsUrl,
+        httpUrl: 'http://x',
+        config: {},
+      },
+      abortSignal: ac.signal,
+      cfg: {
+        agents: { defaults: { blockStreamingDefault: 'on' } },
+      },
+      onReady: () => readyResolve(),
+      log: { info: () => {}, error: () => {}, debug: () => {} },
+    });
+
+    await readyP;
+
+    wsServer.sendToAll({
+      post_type: 'message',
+      message_type: 'private',
+      sub_type: 'friend',
+      message_id: 113,
+      user_id: 224,
+      message: [{ type: 'text', data: { text: 'stream please' } }],
+      raw_message: 'stream please',
+      sender: { user_id: 224, nickname: 'Streamer' },
+      self_id: 999,
+      time: Math.floor(Date.now() / 1000),
+    });
+
+    await vi.waitFor(() => {
+      const texts = outboundCalls.filter((c) => c.kind === 'text');
+      expect(texts.length).toBeGreaterThanOrEqual(2);
+    }, WAIT_FOR_BATCH);
+
+    const textPayloads = outboundCalls
+      .filter((c) => c.kind === 'text')
+      .map((c) => c.args.text);
+    expect(textPayloads).toEqual(expect.arrayContaining(['part-1', 'part-2']));
+
+    ac.abort();
+    await runP;
+    await wsServer.close();
+  });
+
   it('reconnects on abnormal close (uses timers)', async () => {
     const wsServer = await startMockOneBotWsServer();
     const ac = new AbortController();

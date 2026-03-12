@@ -1,0 +1,56 @@
+{
+  "id": "openclaw-onebot",
+  "name": "OneBot",
+  "description": "OneBot 11 channel plugin (NapCat/go-cqhttp)",
+  "version": "1.2.0",
+  "channels": ["onebot"],
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "default": true
+      },
+      "name": {
+        "type": "string",
+        "description": "Display name for this account"
+      },
+      "wsUrl": {
+        "type": "string",
+        "description": "OneBot WebSocket URL"
+      },
+      "httpUrl": {
+        "type": "string",
+        "description": "OneBot HTTP API URL"
+      },
+      "accessToken": {
+        "type": "string",
+        "description": "Access token for OneBot API"
+      },
+      "allowFrom": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Allowed sources (e.g. private:123, group:456)"
+      },
+      "accounts": {
+        "type": "object",
+        "description": "Additional OneBot accounts",
+        "additionalProperties": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "name": { "type": "string" },
+            "wsUrl": { "type": "string" },
+            "httpUrl": { "type": "string" },
+            "accessToken": { "type": "string" },
+            "allowFrom": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "additionalProperties": false
+  }
+}
