@@ -57,19 +57,20 @@ OpenClaw 的 **OneBot 11 协议通道插件**，让 QQ 成为 OpenClaw 一等消
 - WebSocket 自动重连
 - 64 个测试用例通过
 
-### 与其他方案对比
+### 为什么选它
 
-| | **openclaw-onebot** | 方案 A | 方案 B |
-|---|---|---|---|
-| **协议** | OneBot 11 (NapCat/go-cqhttp) | QQ 官方 Bot API | OneBot 11 |
-| **集成方式** | OpenClaw 原生 ChannelPlugin | 独立 Python 脚本 + 文件队列 | 独立 Python 脚本 |
-| **消息路由** | OpenClaw 自动路由 | 手动桥接 | 手动调用 |
-| **Reaction** | 群聊支持 | 无 | 无 |
-| **流式回复** | Block streaming | 无 | 无 |
-| **语音支持** | 完整自动链路 | 无 | 无 |
-| **自动重连** | 指数退避 | 外部守护 | 无 |
-| **测试** | 64 tests | 无 | 无 |
-| **额外进程** | 不需要 | 需要 | 需要 |
+相对 QQ 官方 Bot API 方案：
+
+- 保留 OneBot 生态兼容性
+- 直接进入 OpenClaw 原生消息路由
+- 更适合 NapCat / go-cqhttp 现有部署
+
+相对独立 Python 桥接脚本方案：
+
+- 不需要额外 listener 或文件队列
+- 不需要自己维护消息桥接逻辑
+- block streaming、group reaction、voice pipeline 都在同一插件里
+- 测试覆盖更完整
 
 核心区别：
 
@@ -253,19 +254,20 @@ Notes:
 - WebSocket auto-reconnect
 - 64 tests passing
 
-### Comparison
+### Why choose it
 
-| | **openclaw-onebot** | Solution A | Solution B |
-|---|---|---|---|
-| **Protocol** | OneBot 11 (NapCat/go-cqhttp) | QQ official bot API | OneBot 11 |
-| **Integration** | Native OpenClaw ChannelPlugin | Standalone Python + file queue | Standalone Python scripts |
-| **Routing** | Native OpenClaw routing | Manual bridge | Manual API calls |
-| **Reactions** | Group chats supported | None | None |
-| **Streaming** | Block streaming | None | None |
-| **Voice** | End-to-end voice flow | None | None |
-| **Reconnect** | Exponential backoff | External daemon | None |
-| **Tests** | 64 tests | None | None |
-| **Extra process** | No | Yes | Yes |
+Compared with the QQ official bot API route:
+
+- keeps compatibility with the OneBot ecosystem
+- plugs directly into OpenClaw native routing
+- fits existing NapCat / go-cqhttp deployments better
+
+Compared with standalone Python bridge scripts:
+
+- no extra listener or file-queue bridge
+- no custom routing glue to maintain
+- block streaming, group reactions, and voice pipeline live in one plugin
+- better test coverage
 
 ### Capability boundaries
 
