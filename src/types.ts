@@ -12,6 +12,10 @@ export interface OneBotAccountConfig {
   accessToken?: string;
   /** Whitelist of allowed senders, e.g. ["private:12345", "group:67890", "*"] */
   allowFrom?: string[];
+  /** Automatically react to inbound group messages */
+  groupAutoReact?: boolean;
+  /** QQ/NapCat emoji id used for automatic group reactions */
+  groupAutoReactEmojiId?: string | number;
 }
 
 /**
@@ -25,6 +29,8 @@ export interface ResolvedOneBotAccount {
   httpUrl: string;
   accessToken?: string;
   allowFrom?: string[];
+  groupAutoReact: boolean;
+  groupAutoReactEmojiId: string | number;
   config: OneBotAccountConfig;
 }
 

@@ -24,6 +24,7 @@ OpenClaw 的 **OneBot 11 协议通道插件**，让 QQ 成为 OpenClaw 一等消
 - 🔌 **原生通道插件** — QQ 与 Discord / Telegram / WhatsApp 同级
 - 📨 私聊和群聊收发消息
 - 😀 **Reaction 支持（群聊）** — 通过 NapCat `set_msg_emoji_like` 给群消息加表情回应；QQ 私聊目前不稳定/通常不生效
+- 👍 **群聊自动 reaction** — 对入站群消息自动点表情，可配置开关，默认开启
 - 🌊 **Block streaming** — 支持 OpenClaw 分块回复，QQ 端会连续收到多条流式消息
 - 🎤 **语音完整链路** — QQ 语音 (SILK/AMR) → MP3 → STT → TTS → 发送 QQ 语音
 - 📦 **消息聚合** — 连续多条消息 1.5s 内自动合并（类似 Telegram 风格）
@@ -102,7 +103,9 @@ cd ~/.openclaw/plugins/onebot && npm install && npm run build
     "onebot": {
       "enabled": true,
       "wsUrl": "ws://your-host:3001",
-      "httpUrl": "http://your-host:3001"
+      "httpUrl": "http://your-host:3001",
+      "groupAutoReact": true,
+      "groupAutoReactEmojiId": 1
     }
   }
 }
@@ -137,7 +140,9 @@ openclaw gateway restart
       "wsUrl": "ws://your-host:3001",
       "httpUrl": "http://your-host:3001",
       "accessToken": "your_token",
-      "allowFrom": ["private:12345", "group:67890"]
+      "allowFrom": ["private:12345", "group:67890"],
+      "groupAutoReact": true,
+      "groupAutoReactEmojiId": 1
     }
   }
 }
@@ -147,6 +152,8 @@ openclaw gateway restart
 |------|------|
 | `allowFrom` | 消息来源白名单 — `private:<QQ号>`、`group:<群号>`、或 `*`（允许所有） |
 | `accessToken` | HTTP API 用 Bearer token，WebSocket 用 query 参数 |
+| `groupAutoReact` | 是否对入站群消息自动添加 reaction，默认 `true` |
+| `groupAutoReactEmojiId` | 群聊自动 reaction 使用的 QQ emoji id，默认 `1` |
 
 ### Reaction 与流式回复
 
@@ -154,6 +161,7 @@ openclaw gateway restart
   - 插件实现了 OpenClaw channel action `react`
   - 通过 NapCat `set_msg_emoji_like` 对群消息或指定群消息 `message_id` 添加表情
   - QQ 私聊 reaction 目前不可靠，接口可能返回成功，但不会真正落到消息上
+  - 入站群消息还支持自动 reaction，受 `groupAutoReact` / `groupAutoReactEmojiId` 控制，默认开启
 - **流式回复**
   - 这里支持的是 **OpenClaw block streaming**
   - QQ 端表现为连续多条分块消息，不是“编辑同一条消息”的 draft stream
@@ -269,6 +277,7 @@ Note:
 - 🔌 **Native channel plugin** — QQ on par with Discord / Telegram / WhatsApp
 - 📨 Private & group chat (inbound + outbound)
 - 😀 **Reaction support (groups)** — react to a QQ group message via NapCat `set_msg_emoji_like`; QQ private-chat reactions are currently unreliable
+- 👍 **Automatic group reactions** — auto-react to inbound group messages with a configurable switch, enabled by default
 - 🌊 **Block streaming** — OpenClaw partial replies arrive as multiple QQ messages
 - 🎤 **Full voice pipeline** — QQ voice (SILK/AMR) → MP3 → STT → TTS → send QQ voice
 - 📦 **Message batching** — auto-merge rapid messages within 1.5s (Telegram-style)
@@ -322,7 +331,9 @@ Add to `openclaw.json`:
     "onebot": {
       "enabled": true,
       "wsUrl": "ws://your-host:3001",
-      "httpUrl": "http://your-host:3001"
+      "httpUrl": "http://your-host:3001",
+      "groupAutoReact": true,
+      "groupAutoReactEmojiId": 1
     }
   }
 }
@@ -362,6 +373,7 @@ End-to-end voice flow:
   - It maps to NapCat `set_msg_emoji_like`
   - Group-message reactions are supported
   - QQ private-chat reactions are currently unreliable: the API may return success while no visible reaction is persisted
+  - Inbound group messages can also be auto-reacted, controlled by `groupAutoReact` / `groupAutoReactEmojiId`, enabled by default
 - **Streaming replies**
   - This plugin supports **OpenClaw block streaming**
   - QQ receives multiple incremental messages instead of a single edited draft message
@@ -417,6 +429,8 @@ npm run react-test -- --message-id <message_id> --emoji 76
 |--------|-------------|
 | `allowFrom` | Whitelist — `private:<qq>`, `group:<id>`, or `*` (allow all) |
 | `accessToken` | Bearer token for HTTP, query param for WebSocket |
+| `groupAutoReact` | Whether to auto-react to inbound group messages; defaults to `true` |
+| `groupAutoReactEmojiId` | QQ emoji id used for automatic group reactions; defaults to `1` |
 
 ### Target Format
 

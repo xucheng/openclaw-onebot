@@ -12,7 +12,7 @@ import type {
   OneBotMessageSegment,
 } from "./types.js";
 import { getOneBotRuntime } from "./runtime.js";
-import { sendText as sendOutboundText, sendImage, sendRecord } from "./outbound.js";
+import { reactToMessage, sendText as sendOutboundText, sendImage, sendRecord } from "./outbound.js";
 
 const execAsync = promisify(exec);
 
@@ -565,6 +565,22 @@ export async function startGateway(ctx: GatewayContext): Promise<void> {
         log?.info(
           `[onebot:${account.accountId}] ${isGroup ? "Group" : "Private"} message from ${senderName}(${senderId}) msg=${event.message_id}: ${text.slice(0, 100)}`,
         );
+
+        if (isGroup && account.groupAutoReact) {
+          void reactToMessage(account, event.message_id, account.groupAutoReactEmojiId)
+            .then((result) => {
+              if (!result.ok) {
+                log?.error(
+                  `[onebot:${account.accountId}] Auto reaction failed for group:${event.group_id} msg=${event.message_id}: ${result.error ?? "unknown error"}`,
+                );
+              }
+            })
+            .catch((err) => {
+              log?.error(
+                `[onebot:${account.accountId}] Auto reaction error for group:${event.group_id} msg=${event.message_id}: ${String(err)}`,
+              );
+            });
+        }
 
         // Batch key: per-chat + per-sender for groups
         const batchKey = isGroup

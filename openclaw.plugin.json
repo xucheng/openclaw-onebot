@@ -32,6 +32,19 @@
         "items": { "type": "string" },
         "description": "Allowed sources (e.g. private:123, group:456)"
       },
+      "groupAutoReact": {
+        "type": "boolean",
+        "default": true,
+        "description": "Automatically add a reaction to inbound group messages"
+      },
+      "groupAutoReactEmojiId": {
+        "description": "QQ/NapCat emoji id used for automatic group reactions",
+        "default": 1,
+        "oneOf": [
+          { "type": "integer" },
+          { "type": "string" }
+        ]
+      },
       "accounts": {
         "type": "object",
         "description": "Additional OneBot accounts",
@@ -46,6 +59,17 @@
             "allowFrom": {
               "type": "array",
               "items": { "type": "string" }
+            },
+            "groupAutoReact": {
+              "type": "boolean",
+              "default": true
+            },
+            "groupAutoReactEmojiId": {
+              "default": 1,
+              "oneOf": [
+                { "type": "integer" },
+                { "type": "string" }
+              ]
             }
           }
         }

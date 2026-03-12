@@ -57,6 +57,8 @@ export function resolveOneBotAccount(
       httpUrl: onebot?.httpUrl,
       accessToken: onebot?.accessToken,
       allowFrom: onebot?.allowFrom,
+      groupAutoReact: onebot?.groupAutoReact,
+      groupAutoReactEmojiId: onebot?.groupAutoReactEmojiId,
     };
   } else {
     const account = onebot?.accounts?.[resolvedAccountId];
@@ -81,6 +83,8 @@ export function resolveOneBotAccount(
   }
 
   const allowFrom = accountConfig.allowFrom;
+  const groupAutoReact = accountConfig.groupAutoReact !== false;
+  const groupAutoReactEmojiId = accountConfig.groupAutoReactEmojiId ?? 1;
 
   return {
     accountId: resolvedAccountId,
@@ -90,6 +94,8 @@ export function resolveOneBotAccount(
     httpUrl,
     accessToken,
     allowFrom,
+    groupAutoReact,
+    groupAutoReactEmojiId,
     config: accountConfig,
   };
 }

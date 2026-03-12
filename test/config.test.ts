@@ -130,4 +130,27 @@ describe('config', () => {
     const acct = resolveOneBotAccount(cfg as any, 'default');
     expect(acct.allowFrom).toBeUndefined();
   });
+
+  it('resolveOneBotAccount: groupAutoReact defaults to enabled with emoji 1', () => {
+    const cfg = { channels: { onebot: { wsUrl: 'ws://x', httpUrl: 'http://y' } } };
+    const acct = resolveOneBotAccount(cfg as any, 'default');
+    expect(acct.groupAutoReact).toBe(true);
+    expect(acct.groupAutoReactEmojiId).toBe(1);
+  });
+
+  it('resolveOneBotAccount: groupAutoReact config is passed through', () => {
+    const cfg = {
+      channels: {
+        onebot: {
+          wsUrl: 'ws://x',
+          httpUrl: 'http://y',
+          groupAutoReact: false,
+          groupAutoReactEmojiId: 66,
+        },
+      },
+    };
+    const acct = resolveOneBotAccount(cfg as any, 'default');
+    expect(acct.groupAutoReact).toBe(false);
+    expect(acct.groupAutoReactEmojiId).toBe(66);
+  });
 });
