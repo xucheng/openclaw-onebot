@@ -663,11 +663,29 @@ export async function startGateway(ctx: GatewayContext): Promise<void> {
         //   log?.info?.(`[onebot:${account.accountId}] Failed to read message-level config: ${String(e)}`);
         // }
 
-        // allowFrom check
+        // allowFrom check — apply per-message-type
         const peerId = isGroup ? `group:${event.group_id}` : `private:${senderId}`;
         if (account.allowFrom && account.allowFrom.length > 0) {
-          if (!account.allowFrom.some((pattern) => peerId === pattern || pattern === "*")) {
-            log?.debug?.(`[onebot:${account.accountId}] Ignoring message from unlisted ${peerId}`);
+          const patterns: string[] = account.allowFrom;
+
+          const hasGroupPatterns = patterns.some((p) => p === "*" || String(p).startsWith("group:"));
+          const hasPrivatePatterns = patterns.some((p) => p === "*" || String(p).startsWith("private:"));
+
+          let allowed = true;
+          if (isGroup) {
+            // Only enforce group-level filtering if there are group/* entries
+            if (hasGroupPatterns) {
+              allowed = patterns.some((pattern) => pattern === "*" || pattern === `group:${event.group_id}`);
+            }
+          } else {
+            // Private message: only enforce if there are private/* entries
+            if (hasPrivatePatterns) {
+              allowed = patterns.some((pattern) => pattern === "*" || pattern === `private:${senderId}`);
+            }
+          }
+
+          if (!allowed) {
+            log?.debug?.(`[onebot:${account.accountId}] Ignoring message from unlisted ${peerId} (allowFrom=${JSON.stringify(patterns)})`);
             return;
           }
         }
