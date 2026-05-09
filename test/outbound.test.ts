@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -172,6 +172,8 @@ describe('outbound', () => {
     const staged = join(sharedDir, rel);
     expect(existsSync(staged)).toBe(true);
     expect(readFileSync(staged, 'utf8')).toBe('voice-bytes');
+    expect(statSync(staged).mode & 0o777).toBe(0o600);
+    expect(statSync(join(sharedDir, 'openclaw', 'audio')).mode & 0o777).toBe(0o700);
   });
 
   it('uploadFile: calls upload_group_file with file uri', async () => {

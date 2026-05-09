@@ -69,6 +69,7 @@ const releasePackage = {
   bundledDependencies: basePackage.bundledDependencies,
   bundleDependencies: basePackage.bundleDependencies,
   peerDependencies: basePackage.peerDependencies,
+  peerDependenciesMeta: basePackage.peerDependenciesMeta,
 };
 
 await rm(outputRoot, { recursive: true, force: true });

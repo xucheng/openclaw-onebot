@@ -1,4 +1,5 @@
-import { copyFile, mkdir, readdir, rm, stat } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
+import { chmod, copyFile, mkdir, readdir, rm, stat } from 'node:fs/promises';
 import { basename, extname, isAbsolute, join, posix, relative, sep } from 'node:path';
 import type { ResolvedOneBotAccount, OneBotApiResponse, OneBotMessageSegment } from './types.js';
 import { getDefaultContainerSharedDir, getDefaultSharedDir } from './env.js';
@@ -161,15 +162,17 @@ async function resolveNapCatMediaUri(
 
   const stagedDir = join(sharedDir, STAGED_MEDIA_DIR, kind);
   await mkdir(stagedDir, { recursive: true });
+  await chmod(stagedDir, 0o700).catch(() => {});
 
   const ext = extname(normalizedPath);
   const base = basename(normalizedPath, ext)
     .replace(/[^A-Za-z0-9._-]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 64) || 'media';
-  const stagedName = `${Date.now()}-${base}${ext || ''}`;
+  const stagedName = `${Date.now()}-${randomUUID()}-${base}${ext || ''}`;
   const stagedPath = join(stagedDir, stagedName);
   await copyFile(normalizedPath, stagedPath);
+  await chmod(stagedPath, 0o600).catch(() => {});
 
   void pruneStagedMedia(join(sharedDir, STAGED_MEDIA_DIR));
 

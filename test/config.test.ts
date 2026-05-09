@@ -160,10 +160,10 @@ describe('config', () => {
     expect(acct.allowFrom).toBeUndefined();
   });
 
-  it('resolveOneBotAccount: groupAutoReact defaults to enabled with emoji 1', () => {
+  it('resolveOneBotAccount: groupAutoReact defaults to disabled with emoji 1', () => {
     const cfg = { channels: { onebot: { wsUrl: 'ws://x', httpUrl: 'http://y' } } };
     const acct = resolveOneBotAccount(cfg as any, 'default');
-    expect(acct.groupAutoReact).toBe(true);
+    expect(acct.groupAutoReact).toBe(false);
     expect(acct.groupAutoReactEmojiId).toBe(1);
   });
 

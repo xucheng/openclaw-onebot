@@ -180,12 +180,19 @@ describe('gateway helpers', () => {
       peerId: 'private:99',
     })).toBe(false);
 
+    expect(resolveInboundCommandAuthorization({
+      pluginRuntime: runtimeWithHelper,
+      cfg: { commands: { useAccessGroups: true } },
+      allowFrom: undefined,
+      peerId: 'private:42',
+    })).toBe(false);
+
     const legacyRuntime = { channel: {} } as any;
     expect(resolveInboundCommandAuthorization({
       pluginRuntime: legacyRuntime,
       cfg: {},
       allowFrom: undefined,
       peerId: 'private:100',
-    })).toBe(true);
+    })).toBe(false);
   });
 });

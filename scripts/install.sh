@@ -22,12 +22,16 @@ echo "📦 Preparing release payload..."
 if command -v "$OPENCLAW_CLI" >/dev/null 2>&1; then
   echo "🔌 Registering plugin with OpenClaw plugin index..."
   if "$OPENCLAW_CLI" plugins install "$RELEASE_DIR" --force; then
-    node "$RELEASE_DIR/scripts/sync-openclaw-cli.mjs" 2>/dev/null || echo "⚠️  OpenClaw CLI sync skipped; run npm run sync:openclaw-cli if needed."
+    if [ "${ONEBOT_SYNC_OPENCLAW_CLI:-0}" = "1" ]; then
+      node "$RELEASE_DIR/scripts/sync-openclaw-cli.mjs" 2>/dev/null || echo "⚠️  OpenClaw CLI sync skipped; run npm run sync:openclaw-cli if needed."
+    else
+      echo "ℹ️  OpenClaw CLI patch skipped. Set ONEBOT_SYNC_OPENCLAW_CLI=1 only if your OpenClaw build lacks shared-dir setup flags."
+    fi
     echo "✅ OneBot plugin installed via $OPENCLAW_CLI plugins install"
     echo ""
     echo "📝 Next steps:"
     echo "   1. Add to openclaw.json:"
-    echo '      "channels": { "onebot": { "enabled": true, "wsUrl": "ws://your-host:port", "httpUrl": "http://your-host:port" } }'
+    echo '      "channels": { "onebot": { "enabled": true, "wsUrl": "ws://your-host:port", "httpUrl": "http://your-host:port", "accessToken": "strong-token", "allowFrom": ["private:12345"] } }'
     echo "   2. Restart gateway: openclaw gateway restart"
     exit 0
   fi
@@ -60,11 +64,15 @@ cp "$RELEASE_DIR"/LICENSE "$PLUGIN_DIR"/
 # 安装运行时依赖；显式跳过 peer 依赖，并关闭 audit/lockfile/fund，避免插件安装拖尾
 cd "$PLUGIN_DIR"
 npm install --omit=dev --omit=peer --no-package-lock --no-audit --no-fund
-node "$PLUGIN_DIR/scripts/sync-openclaw-cli.mjs" 2>/dev/null || echo "⚠️  OpenClaw CLI sync skipped; run npm run sync:openclaw-cli if needed."
+if [ "${ONEBOT_SYNC_OPENCLAW_CLI:-0}" = "1" ]; then
+  node "$PLUGIN_DIR/scripts/sync-openclaw-cli.mjs" 2>/dev/null || echo "⚠️  OpenClaw CLI sync skipped; run npm run sync:openclaw-cli if needed."
+else
+  echo "ℹ️  OpenClaw CLI patch skipped. Set ONEBOT_SYNC_OPENCLAW_CLI=1 only if your OpenClaw build lacks shared-dir setup flags."
+fi
 
 echo "✅ OneBot plugin installed to $PLUGIN_DIR"
 echo ""
 echo "📝 Next steps:"
 echo "   1. Add to openclaw.json:"
-echo '      "channels": { "onebot": { "enabled": true, "wsUrl": "ws://your-host:port", "httpUrl": "http://your-host:port" } }'
+echo '      "channels": { "onebot": { "enabled": true, "wsUrl": "ws://your-host:port", "httpUrl": "http://your-host:port", "accessToken": "strong-token", "allowFrom": ["private:12345"] } }'
 echo "   2. Restart gateway: openclaw gateway restart"

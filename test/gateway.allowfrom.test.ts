@@ -3,6 +3,7 @@ import { startMockOneBotWsServer } from './helpers/mock-ws-server.js';
 
 let mockRuntime: any;
 let dispatchCount = 0;
+let lastCtx: any;
 
 vi.mock('../src/runtime.js', () => ({
   getOneBotRuntime: () => mockRuntime,
@@ -48,6 +49,7 @@ function makeGroupMsg(userId: number, groupId: number, text: string) {
 describe('gateway allowFrom', () => {
   beforeEach(() => {
     dispatchCount = 0;
+    lastCtx = null;
     mockRuntime = {
       channel: {
         activity: { record: () => {} },
@@ -55,7 +57,10 @@ describe('gateway allowFrom', () => {
         reply: {
           resolveEnvelopeFormatOptions: () => ({}),
           formatInboundEnvelope: (x: any) => x.body,
-          finalizeInboundContext: (x: any) => x,
+          finalizeInboundContext: (x: any) => {
+            lastCtx = x;
+            return x;
+          },
           resolveEffectiveMessagesConfig: () => ({ responsePrefix: '' }),
           dispatchReplyWithBufferedBlockDispatcher: async ({ dispatcherOptions }: any) => {
             dispatchCount++;
@@ -81,7 +86,7 @@ describe('gateway allowFrom', () => {
     vi.restoreAllMocks();
   });
 
-  it('allows all when allowFrom is empty/undefined', async () => {
+  it('allows messages when allowFrom is empty/undefined but does not authorize commands', async () => {
     const wsServer = await startMockOneBotWsServer();
     const ac = new AbortController();
     const { startGateway } = await import('../src/gateway.js');
@@ -108,6 +113,7 @@ describe('gateway allowFrom', () => {
     wsServer.sendToAll(makePrivateMsg(888, 'anyone'));
 
     await vi.waitFor(() => expect(dispatchCount).toBe(1), { timeout: 5000 });
+    expect(lastCtx.CommandAuthorized).toBe(false);
 
     ac.abort();
     await runP;
