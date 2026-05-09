@@ -102,8 +102,8 @@ export function resolveInboundCommandAuthorization(params: {
 }): boolean {
   const { pluginRuntime, cfg, allowFrom, peerId } = params;
   const hasAllowFrom = Array.isArray(allowFrom) && allowFrom.length > 0;
-  const senderAllowedForCommands = !hasAllowFrom
-    || allowFrom.some((pattern) => peerId === pattern || pattern === "*");
+  const senderAllowedForCommands = hasAllowFrom
+    && allowFrom.some((pattern) => peerId === pattern || pattern === "*");
   const resolveCommandAuthorized =
     pluginRuntime.channel.commands?.resolveCommandAuthorizedFromAuthorizers;
 
@@ -119,7 +119,7 @@ export function resolveInboundCommandAuthorization(params: {
         allowed: senderAllowedForCommands,
       },
     ],
-    modeWhenAccessGroupsOff: "configured",
+    modeWhenAccessGroupsOff: hasAllowFrom ? "configured" : "deny",
   });
 }
 

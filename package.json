@@ -1,7 +1,7 @@
 {
   "name": "openclaw-onebot",
   "displayName": "OpenClaw OneBot",
-  "version": "1.2.12",
+  "version": "1.2.13",
   "description": "OpenClaw OneBot 11 channel plugin for QQ messaging. Native integration with NapCat/go-cqhttp — voice pipeline, reactions, block streaming, and media delivery.",
   "type": "module",
   "main": "dist/index.js",
@@ -77,11 +77,11 @@
     "@vitest/coverage-v8": "^2.1.9"
   },
   "peerDependencies": {
-    "clawdbot": "*",
-    "moltbot": "*",
     "openclaw": ">=2026.3.23-1 <2027"
   },
-  "bundleDependencies": [
-    "ws"
-  ]
+  "peerDependenciesMeta": {
+    "openclaw": {
+      "optional": true
+    }
+  }
 }

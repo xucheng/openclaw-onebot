@@ -2,7 +2,7 @@
   "id": "openclaw-onebot",
   "name": "OneBot",
   "description": "OneBot 11 channel plugin (NapCat/go-cqhttp)",
-  "version": "1.2.12",
+  "version": "1.2.13",
   "channels": ["onebot"],
   "channelEnvVars": {
     "onebot": [
@@ -44,7 +44,7 @@
           },
           "accessToken": {
             "type": "string",
-            "description": "Access token for OneBot API"
+            "description": "Sensitive access token for the OneBot API; keep endpoints on localhost or a trusted network"
           },
           "sharedDir": {
             "type": "string",
@@ -57,11 +57,11 @@
           "allowFrom": {
             "type": "array",
             "items": { "type": "string" },
-            "description": "Allowed sources (e.g. private:123, group:456)"
+            "description": "Allowed sources (e.g. private:123, group:456). Configure this for trusted QQ users or groups before enabling text commands."
           },
           "groupAutoReact": {
             "type": "boolean",
-            "default": true,
+            "default": false,
             "description": "Automatically add a reaction to inbound group messages"
           },
           "groupAutoReactEmojiId": {
@@ -198,16 +198,20 @@
               "name": { "type": "string" },
               "wsUrl": { "type": "string" },
               "httpUrl": { "type": "string" },
-              "accessToken": { "type": "string" },
+              "accessToken": {
+                "type": "string",
+                "description": "Sensitive access token for the OneBot API; keep endpoints on localhost or a trusted network"
+              },
               "sharedDir": { "type": "string" },
               "containerSharedDir": { "type": "string" },
               "allowFrom": {
                 "type": "array",
-                "items": { "type": "string" }
+                "items": { "type": "string" },
+                "description": "Allowed sources (e.g. private:123, group:456). Configure this for trusted QQ users or groups before enabling text commands."
               },
               "groupAutoReact": {
                 "type": "boolean",
-                "default": true
+                "default": false
               },
               "groupAutoReactEmojiId": {
                 "default": 1,
