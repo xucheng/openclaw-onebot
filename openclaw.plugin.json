@@ -2,7 +2,7 @@
   "id": "openclaw-onebot",
   "name": "OneBot",
   "description": "OneBot 11 channel plugin (NapCat/go-cqhttp)",
-  "version": "1.2.14",
+  "version": "1.2.15",
   "channels": ["onebot"],
   "channelEnvVars": {
     "onebot": [

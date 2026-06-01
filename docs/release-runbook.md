@@ -9,7 +9,7 @@ This runbook covers the `openclaw-onebot` npm publication flow, GitHub releases,
 - OpenClaw runtime manifest id: `openclaw-onebot`
 - OpenClaw channel id: `onebot`
 - ClawHub skill slug: `openclaw-onebot`
-- Current release line: `1.2.14`
+- Current release line: `1.2.15`
 
 Keep the distribution names and runtime id distinct. The npm package stays `openclaw-onebot` so users installed from `openclaw-onebot@1.2.x` can upgrade normally. The ClawHub package payload is `openclaw-onebot-plugin`. The runtime id is used by existing OpenClaw config keys such as `plugins.allow` and `plugins.entries`.
 
