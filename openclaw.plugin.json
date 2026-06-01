@@ -2,7 +2,7 @@
   "id": "openclaw-onebot",
   "name": "OneBot",
   "description": "OneBot 11 channel plugin (NapCat/go-cqhttp)",
-  "version": "1.2.13",
+  "version": "1.2.14",
   "channels": ["onebot"],
   "channelEnvVars": {
     "onebot": [
@@ -58,6 +58,12 @@
             "type": "array",
             "items": { "type": "string" },
             "description": "Allowed sources (e.g. private:123, group:456). Configure this for trusted QQ users or groups before enabling text commands."
+          },
+          "groupAllowFrom": {
+            "type": "array",
+            "items": { "type": "string" },
+            "deprecated": true,
+            "description": "Deprecated legacy group allow-list; use allowFrom instead"
           },
           "groupAutoReact": {
             "type": "boolean",
@@ -198,6 +204,11 @@
                 "type": "array",
                 "items": { "type": "string" },
                 "description": "Allowed sources (e.g. private:123, group:456). Configure this for trusted QQ users or groups before enabling text commands."
+              },
+              "groupAllowFrom": {
+                "type": "array",
+                "items": { "type": "string" },
+                "deprecated": true
               },
               "groupAutoReact": {
                 "type": "boolean",

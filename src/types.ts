@@ -16,6 +16,8 @@ export interface OneBotAccountConfig {
   containerSharedDir?: string;
   /** Whitelist of allowed senders, e.g. ["private:12345", "group:67890", "*"] */
   allowFrom?: string[];
+  /** Deprecated alias for legacy configs; use allowFrom instead */
+  groupAllowFrom?: string[];
   /** Automatically react to inbound group messages (disabled by default) */
   groupAutoReact?: boolean;
   /** QQ/NapCat emoji id used for automatic group reactions */

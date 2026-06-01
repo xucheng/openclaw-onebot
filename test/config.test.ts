@@ -154,6 +154,35 @@ describe('config', () => {
     expect(acct.allowFrom).toEqual(['private:111', 'group:200']);
   });
 
+  it('resolveOneBotAccount: legacy groupAllowFrom falls back to allowFrom-compatible patterns', () => {
+    const cfg = {
+      channels: {
+        onebot: {
+          wsUrl: 'ws://x',
+          httpUrl: 'http://y',
+          groupAllowFrom: ['1007476107', 'group:200', 'private:111', '*'],
+        },
+      },
+    };
+    const acct = resolveOneBotAccount(cfg as any, 'default');
+    expect(acct.allowFrom).toEqual(['group:1007476107', 'group:200', 'private:111', '*']);
+  });
+
+  it('resolveOneBotAccount: allowFrom takes precedence over legacy groupAllowFrom', () => {
+    const cfg = {
+      channels: {
+        onebot: {
+          wsUrl: 'ws://x',
+          httpUrl: 'http://y',
+          allowFrom: ['private:111'],
+          groupAllowFrom: ['1007476107'],
+        },
+      },
+    };
+    const acct = resolveOneBotAccount(cfg as any, 'default');
+    expect(acct.allowFrom).toEqual(['private:111']);
+  });
+
   it('resolveOneBotAccount: allowFrom undefined when not set', () => {
     const cfg = { channels: { onebot: { wsUrl: 'ws://x', httpUrl: 'http://y' } } };
     const acct = resolveOneBotAccount(cfg as any, 'default');

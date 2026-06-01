@@ -14,6 +14,27 @@ interface OneBotChannelConfig extends OneBotAccountConfig {
   accounts?: Record<string, OneBotAccountConfig>;
 }
 
+function normalizeLegacyGroupAllowFrom(groupAllowFrom: string[] | undefined): string[] | undefined {
+  if (!Array.isArray(groupAllowFrom) || groupAllowFrom.length === 0) {
+    return undefined;
+  }
+
+  return groupAllowFrom.map((pattern) => {
+    const trimmed = String(pattern).trim();
+    if (trimmed === "*" || trimmed.includes(":")) {
+      return trimmed;
+    }
+    return `group:${trimmed}`;
+  });
+}
+
+function resolveAllowFrom(accountConfig: OneBotAccountConfig): string[] | undefined {
+  if (Array.isArray(accountConfig.allowFrom) && accountConfig.allowFrom.length > 0) {
+    return accountConfig.allowFrom;
+  }
+  return normalizeLegacyGroupAllowFrom(accountConfig.groupAllowFrom) ?? accountConfig.allowFrom;
+}
+
 /**
  * List all configured OneBot account IDs.
  */
@@ -59,6 +80,7 @@ export function resolveOneBotAccount(
       sharedDir: onebot?.sharedDir,
       containerSharedDir: onebot?.containerSharedDir,
       allowFrom: onebot?.allowFrom,
+      groupAllowFrom: onebot?.groupAllowFrom,
       groupAutoReact: onebot?.groupAutoReact,
       groupAutoReactEmojiId: onebot?.groupAutoReactEmojiId,
     };
@@ -84,7 +106,7 @@ export function resolveOneBotAccount(
     }
   }
 
-  const allowFrom = accountConfig.allowFrom;
+  const allowFrom = resolveAllowFrom(accountConfig);
   const groupAutoReact = accountConfig.groupAutoReact === true;
   const groupAutoReactEmojiId = accountConfig.groupAutoReactEmojiId ?? 1;
 

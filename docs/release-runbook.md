@@ -9,7 +9,7 @@ This runbook covers the `openclaw-onebot` npm publication flow, GitHub releases,
 - OpenClaw runtime manifest id: `openclaw-onebot`
 - OpenClaw channel id: `onebot`
 - ClawHub skill slug: `openclaw-onebot`
-- Current release line: `1.2.13`
+- Current release line: `1.2.14`
 
 Keep the distribution names and runtime id distinct. The npm package stays `openclaw-onebot` so users installed from `openclaw-onebot@1.2.x` can upgrade normally. The ClawHub package payload is `openclaw-onebot-plugin`. The runtime id is used by existing OpenClaw config keys such as `plugins.allow` and `plugins.entries`.
 
@@ -106,7 +106,7 @@ clawhub package publish .clawhub-plugin/openclaw-onebot-plugin \
   --source-ref "v${VERSION}" \
   --source-commit "${SHA}" \
   --tags latest,openclaw,onebot,qq,napcat \
-  --changelog "Require explicit allowFrom authorization for OneBot text commands, make CLI sync opt-in, disable group auto reactions by default, harden staged media permissions, and remove legacy peer dependency auto-installs."
+  --changelog "Accept legacy channels.onebot.groupAllowFrom configs as a deprecated alias for allowFrom so upgraded OpenClaw hosts keep validating and routing OneBot allow-lists."
 ```
 
 ## ClawHub Skill Publish
@@ -126,7 +126,7 @@ clawhub publish .clawhub-skill/openclaw-onebot \
   --name "OpenClaw OneBot" \
   --version "${VERSION}" \
   --tags latest,openclaw,onebot,qq,napcat \
-  --changelog "Document safer OneBot setup defaults, allowFrom command authorization, opt-in CLI sync, and the v1.2.13 verification flow."
+  --changelog "Document the OneBot legacy groupAllowFrom compatibility release and current verification flow."
 ```
 
 ## Post-Publish Checks

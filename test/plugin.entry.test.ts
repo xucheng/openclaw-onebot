@@ -89,9 +89,14 @@ describe('package compatibility metadata', () => {
       properties: {
         wsUrl: { type: 'string' },
         httpUrl: { type: 'string' },
+        groupAllowFrom: { type: 'array', deprecated: true },
         accounts: { type: 'object' },
         streaming: { $ref: '#/$defs/streaming' },
       },
+    });
+    expect(manifest.channelConfigs.onebot.schema.$defs.account.properties.groupAllowFrom).toMatchObject({
+      type: 'array',
+      deprecated: true,
     });
     expect(manifest.channelEnvVars.onebot).toContain('ONEBOT_WS_URL');
   });
