@@ -83,8 +83,5 @@
     "openclaw": {
       "optional": true
     }
-  },
-  "bundleDependencies": [
-    "ws"
-  ]
+  }
 }

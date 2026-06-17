@@ -78,6 +78,16 @@
               { "type": "string" }
             ]
           },
+          "requireMention": {
+            "type": "boolean",
+            "default": false,
+            "description": "Require an @mention in group messages before the bot replies"
+          },
+          "triggerKeywords": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Keywords that trigger a reply when present in a message"
+          },
           "configWrites": {
             "type": "boolean",
             "description": "Allow channel-initiated config writes"
@@ -220,6 +230,14 @@
                   { "type": "integer" },
                   { "type": "string" }
                 ]
+              },
+              "requireMention": {
+                "type": "boolean",
+                "default": false
+              },
+              "triggerKeywords": {
+                "type": "array",
+                "items": { "type": "string" }
               },
               "configWrites": { "type": "boolean" },
               "commands": { "$ref": "#/$defs/commands" },
